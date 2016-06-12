@@ -1,0 +1,14 @@
+{
+    "version": "0.1.0",
+    "summary": "Package for broadcasting messages to parent components and side-effects.",
+    "repository": "https://github.com/akbiggs/elm-effects.git",
+    "license": "BSD3",
+    "source-directories": [
+        "./src"
+    ],
+    "exposed-modules": [],
+    "dependencies": {
+        "elm-lang/core": "4.0.1 <= v < 5.0.0"
+    },
+    "elm-version": "0.17.0 <= v < 0.18.0"
+}
