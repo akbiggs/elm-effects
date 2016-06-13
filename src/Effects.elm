@@ -27,7 +27,7 @@ back to the home page.
 More documentation coming soon!
 
 # Types
-@docs Effects, None, Handler
+@docs Effects, None
 
 # Constructors
 @docs init, return
@@ -42,7 +42,7 @@ More documentation coming soon!
 @docs mapOverValue, mapOverEffects
 
 # Handling Effects
-@docs handle, ignoreUnused
+@docs Handler, handle, ignoreUnused
 
 # Chaining Operations
 @docs andThen
@@ -71,16 +71,6 @@ making your code consistent and flexible.
 -}
 type alias None =
     ()
-
-
-{-| A `Handler` is a function that takes an effect and applies it to an object,
-giving back the new state of that object and any resulting effects. This is useful
-when you want to take a child's side-effect and have the parent react to it. For example,
-if updating the child has an effect of `IncreaseScore 100`, the parent might update its
-`score` value by that amount and return an additional side-effect of `PlaySound "scoreIncreased.wav"`.
--}
-type alias Handler effectA a effectB =
-    effectA -> a -> Effects a effectB
 
 
 {-| Initialize an `Effects` wrapper from a value and a list of effects.
@@ -151,6 +141,16 @@ mapOverEffects fn ( x, effects ) =
     ( x, List.map fn effects )
 
 
+{-| A `Handler` is a function that takes an effect and applies it to an object,
+giving back the new state of that object and any resulting effects. This is useful
+when you want to take a child's side-effect and have the parent react to it. For example,
+if updating the child has an effect of `IncreaseScore 100`, the parent might update its
+`score` value by that amount and return an additional side-effect of `PlaySound "scoreIncreased.wav"`.
+-}
+type alias Handler effectA a effectB =
+    effectA -> a -> Effects a effectB
+
+
 {-| Perform a list of effects on an object, returning the new state of that
 object and any side-effects that resulted from those effects occurring.
 -}
@@ -165,7 +165,7 @@ handle effectHandlerFn effects x =
 in a way that will fail to compile if the object's code is modified to return
 side-effects in the future.
 -}
-ignoreUnused : None -> a -> Effects a effect
+ignoreUnused : Handler None a effect
 ignoreUnused _ x =
     return x
 
