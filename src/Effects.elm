@@ -285,6 +285,7 @@ on it that returns a new value-and-effects pair, and batches the old effects tog
 with the new ones. For example, here are a bunch of actions chained together that
 might generate sound effects and particles:
 
+    -- returns Effects Enemy.Model Enemy.Effect
     Effects.return newEnemy
         `andThen` Enemy.move {x = 0, y = 1}
         `andThen` Enemy.makeYelpingNoiseOccasionally
