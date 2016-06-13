@@ -20,7 +20,7 @@ module Effects
 
 {-| This package contains several useful functions for operating on pairs
 of a value and a list of side-effects. Side-effects do not have to be external
-Elm events - they can be internal app events, such as a message indicating that
+Elm events such as I/O and randomness - they can be internal app events, such as a message indicating that
 the score of your game should increase or that you want to navigate back to the home page.
 
 For example, having the player jump might update the state of the player and have a
