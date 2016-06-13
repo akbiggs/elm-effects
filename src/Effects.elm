@@ -24,7 +24,24 @@ Elm events - they can be internal app events, such as a message indicating that
 the score of your game should increase, or that you want to navigate the app
 back to the home page.
 
-More documentation coming soon!
+For example, having the player jump might update the state of the player and have a
+side-effect of adding some dust particles into the scene. In that case, your player
+component might look like this:
+
+    type Msg
+      = Jump
+
+    type Effect
+      = SpawnDustParticles
+      | PlaySound String
+
+    update : Msg -> Model -> Effects Model Effect
+    update msg model =
+        case msg of
+            Jump ->
+                Effects.return { model | velocity = jumpVelocity }
+                    |> Effects.add [PlaySound "jumpSound.wav"]
+                    |> Effects.addIf model.isGrounded [SpawnDustParticles]
 
 # Aliases
 @docs Effects, None
@@ -60,8 +77,6 @@ More documentation coming soon!
 {-| A value combining a value and a list of effects associated with that current
 value, e.g. resulting from an update or initialization.
 
-For example, having the player jump might update the state of the player and have a
-side-effect of adding some dust particles into the scene.
 -}
 type alias Effects a effect =
     ( a, List effect )
