@@ -26,7 +26,7 @@ back to the home page.
 
 More documentation coming soon!
 
-# Types
+# Aliases
 @docs Effects, None
 
 # Constructors
@@ -54,6 +54,8 @@ More documentation coming soon!
 @docs toCmd
 -}
 
+-- ALIASES
+
 
 {-| A value combining a value and a list of effects associated with that current
 value, e.g. resulting from an update or initialization.
@@ -73,6 +75,10 @@ type alias None =
     ()
 
 
+
+-- CONSTRUCTORS
+
+
 {-| Initialize an `Effects` wrapper from a value and a list of effects.
 -}
 init : a -> List effect -> Effects a effect
@@ -89,6 +95,10 @@ return x =
     init x []
 
 
+
+-- GETTERS
+
+
 {-| Gets the value from a value-and-effects pair.
 -}
 getValue : Effects a effect -> a
@@ -101,6 +111,10 @@ getValue ( x, effects ) =
 getEffects : Effects a effect -> List effect
 getEffects ( x, effects ) =
     effects
+
+
+
+-- ADDING EFFECTS
 
 
 {-| Add some additional side-effects to your value-and-effects result.
@@ -125,6 +139,10 @@ addIf cond newEffects result =
         result
 
 
+
+-- MAPPING
+
+
 {-| Modify the value of a value-and-effects pair, while still keeping the effects
    the same.
 -}
@@ -139,6 +157,10 @@ the same.
 mapOverEffects : (effectA -> effectB) -> Effects a effectA -> Effects a effectB
 mapOverEffects fn ( x, effects ) =
     ( x, List.map fn effects )
+
+
+
+-- HANDLING EFFECTS
 
 
 {-| A `Handler` is a function that takes an effect and applies it to an object,
@@ -170,6 +192,10 @@ ignoreUnused _ x =
     return x
 
 
+
+-- CHAINING
+
+
 {-| If you have a bunch of operations that take a value and return a value-and-effects
 pair, e.g. a value and a list of `Cmd`s to batch together, chaining them together
 can be really annoying, because you constantly have to destructure the result
@@ -192,6 +218,10 @@ andThen ( x, effects ) fn =
         init y (effects ++ newEffects)
 
 
+
+-- COMBINING
+
+
 {-| Takes a list of results with the same type of effects and brings their
 effects together into one list. This is useful when you map a function that
 returns a value and effects over a list of objects, e.g.
@@ -205,6 +235,10 @@ batch results =
             List.unzip results
     in
         ( xs, List.concat effectsLists )
+
+
+
+-- CONVERSION
 
 
 {-| Takes a pair of a value and a list of commands,
