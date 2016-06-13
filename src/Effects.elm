@@ -21,12 +21,11 @@ module Effects
 {-| This package contains several useful functions for operating on pairs
 of a value and a list of side-effects. Side-effects do not have to be external
 Elm events - they can be internal app events, such as a message indicating that
-the score of your game should increase, or that you want to navigate the app
-back to the home page.
+the score of your game should increase or that you want to navigate back to the home page.
 
 For example, having the player jump might update the state of the player and have a
-side-effect of adding some dust particles into the scene. In that case, your player
-component might look like this:
+side-effect of playing a sound and spawning some dust particles if the player
+jumped off the ground. In that case, your player component might look like this:
 
     type Msg
       = Jump
@@ -74,9 +73,8 @@ component might look like this:
 -- ALIASES
 
 
-{-| A value combining a value and a list of effects associated with that current
-value, e.g. resulting from an update or initialization.
-
+{-| `Effects a effect` combines a value of type `a` and a list of effects of
+type `effect` into a single data structure.
 -}
 type alias Effects a effect =
     ( a, List effect )
@@ -84,7 +82,16 @@ type alias Effects a effect =
 
 {-| `None` is useful when updating a component shouldn't have any side effects on
 the world. This way, you can still keep the structure of your component the same,
-making your code consistent and flexible.
+making your code consistent and flexible if you want to introduce side-effects later
+on. For example, a cloud in the background might not have any side-effects on the world:
+
+    type Msg = Tick Time
+
+    type alias Effect = Effects.None
+
+    update : Msg -> Model -> Effects Model Effect
+    update msg model =
+        -- implementation details
 -}
 type alias None =
     ()
@@ -94,16 +101,43 @@ type alias None =
 -- CONSTRUCTORS
 
 
-{-| Initialize an `Effects` wrapper from a value and a list of effects.
+{-| Initialize an `Effects` wrapper from a value and a list of effects. For now,
+this is pretty useless compared to just wrapping the value and effects
+in parentheses -- however, later on the implementation of `Effects`
+might change to become a dictionary with `value` and `effects` keys, so using
+this function makes your code more future-proof. It's also a bit nicer stylistically
+compared to wrapping your code in parentheses when the value is more complicated: compare
+`elm-format`'s output of
+
+    ( { x = 0
+      , y = 0
+      }
+    , [ PlaySound "hello.wav", IncreaseScore 100 ]
+    )
+
+with
+
+    Effects.init
+        { x = 0
+        , y = 0
+        }
+        [ PlaySound "hello.wav", IncreaseScore 100 ]
+
 -}
 init : a -> List effect -> Effects a effect
 init x effects =
     ( x, effects )
 
 
-{-| Take a value and wrap it with no `Effects`.
-This is useful when you don't want to surround your value in parentheses because
-it will look messy, e.g. with updates to larger data structures.
+{-| Take a value and wrap it with no effects.
+This is useful when you don't want to make a tuple with a more complicated value and an empty
+list because it will look messy, e.g.
+
+    Effects.return
+        { model
+            | isGrounded = true
+            , velocity = (0, 0)
+        }
 -}
 return : a -> Effects a effect
 return x =
@@ -132,7 +166,9 @@ getEffects ( x, effects ) =
 -- ADDING EFFECTS
 
 
-{-| Add some additional side-effects to your value-and-effects result.
+{-| Add some additional side-effects to your value-and-effects result. This is
+nice when you want to take the result from another function and dump some extra
+effects into it without destructuring.
 -}
 add : List effect -> Effects a effect -> Effects a effect
 add newEffects ( x, effects ) =
@@ -166,8 +202,8 @@ mapOverValue fn ( x, effects ) =
     ( fn x, effects )
 
 
-{-| Modify the effects of a value-and-effects pair, while still keeping the value
-the same.
+{-| Map a function over the list of effects of a value-and-effects pair,
+while still keeping the value the same.
 -}
 mapOverEffects : (effectA -> effectB) -> Effects a effectA -> Effects a effectB
 mapOverEffects fn ( x, effects ) =
@@ -179,17 +215,38 @@ mapOverEffects fn ( x, effects ) =
 
 
 {-| A `Handler` is a function that takes an effect and applies it to an object,
-giving back the new state of that object and any resulting effects. This is useful
-when you want to take a child's side-effect and have the parent react to it. For example,
-if updating the child has an effect of `IncreaseScore 100`, the parent might update its
-`score` value by that amount and return an additional side-effect of `PlaySound "scoreIncreased.wav"`.
+giving back the new state of that object and any resulting effects.
 -}
 type alias Handler effectA a effectB =
     effectA -> a -> Effects a effectB
 
 
-{-| Perform a list of effects on an object, returning the new state of that
-object and any side-effects that resulted from those effects occurring.
+{-| Perform a list of effects sequentially on an object, returning the new state of that
+object and any side-effects that resulted from those effects occurring. This is similar
+to a `foldl`.
+
+This is useful when you want to take a child's side-effect and have the parent react to it.
+For example, if a child component gets updated and returns an effect saying to increase the score,
+the parent should update the score and play a sound:
+
+    -- in the parent component's update function
+
+    let
+        (updatedEnemies, enemyEffects) =
+            List.map (Enemy.update Enemy.TakeDamage) model.enemies
+                |> Effects.batch -- the score might increase if the enemy died
+    in
+        Effects.return { model | enemies = updatedEnemies }
+            `Effects.andThen` Effects.handle handleEnemyEffect enemyEffects
+
+    -- in the parent component's helper functions
+
+    handleEnemyEffect : Effects.Handler Enemy.Effect Model Effect
+    handleEnemyEffect enemyEffect model =
+        case enemyEffect of
+            Enemy.IncreaseScore amount ->
+                Effects.return { model | score = model.score + amount }
+                    |> Effects.add [PlaySound "scoreIncreased.wav"]
 -}
 handle : Handler effectA a effectB -> List effectA -> a -> Effects a effectB
 handle effectHandlerFn effects x =
@@ -201,6 +258,13 @@ handle effectHandlerFn effects x =
 {-| If an object returned no side-effect, this function allows you to ignore it
 in a way that will fail to compile if the object's code is modified to return
 side-effects in the future.
+
+    Effects.return { model | clouds = updatedClouds }
+        `Effects.andThen` Effects.handle handleCloudEffect cloudEffects
+
+    handleCloudEffect : Effects.Handler Cloud.Effect Model Effect
+    handleCloudEffect =
+      Effects.ignoreUnused
 -}
 ignoreUnused : Handler None a effect
 ignoreUnused _ x =
@@ -215,6 +279,7 @@ ignoreUnused _ x =
 pair, e.g. a value and a list of `Cmd`s to batch together, chaining them together
 can be really annoying, because you constantly have to destructure the result
 and grab the value, bringing it into the next statement.
+
 `andThen` lets you take the value out of a value-and-effects pair, run a function
 on it that returns a new value-and-effects pair, and batches the old effects together
 with the new ones. For example, here are a bunch of actions chained together that
@@ -242,6 +307,7 @@ effects together into one list. This is useful when you map a function that
 returns a value and effects over a list of objects, e.g.
 
     List.map (Enemy.update Enemy.TakeDamage) enemies
+        |> Effects.batch -- equivalent to |> \(x, effectLists) -> (x, List.concat effectsLists)
 -}
 batch : List (Effects a effect) -> Effects (List a) effect
 batch results =
@@ -259,6 +325,14 @@ batch results =
 {-| Takes a pair of a value and a list of commands,
 and turns it into a pair of a value and a single command by batching the commands
 together.
+
+    runRequests : Model -> (Model, Cmd Msg)
+    runRequests model =
+        (Effects.return model
+            `Effects.andThen` fetchGifs
+            `Effects.andThen` attachRandomId
+        )
+            |> Effects.toCmd
 -}
 toCmd : Effects a (Cmd msg) -> ( a, Cmd msg )
 toCmd ( x, cmds ) =
