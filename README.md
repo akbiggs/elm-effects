@@ -4,7 +4,7 @@ Elm events - they can be internal app events, such as a message indicating that
 the score of your game should increase, or that you want to navigate the app
 back to the home page.
 
-This library is intended to be used in combination with `Cmd`s -- it operates
+This library can be used in combination with `Cmd`s -- it operates
 on a generic `(a, List b)` pair, which means that you can use it on a
 `(Model, List (Cmd Msg))` pair and then batch the commands together later using
 `Effects.toCmd`. However, it is also useful in situations where `Cmd`s cannot be used,
