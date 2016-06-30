@@ -1,5 +1,5 @@
 {
-    "version": "2.1.0",
+    "version": "2.1.1",
     "summary": "Package for broadcasting messages to parent components and side-effects.",
     "repository": "https://github.com/akbiggs/elm-effects.git",
     "license": "BSD3",
