@@ -1,9 +1,9 @@
-module Effects.App exposing (app)
+module Effects.App exposing (program)
 
 {-| This module simplifies creating an app using functions that return an
 `Effects` wrapper instead of the regular `(Model, Cmd Msg)` pair.
 
-@docs app
+@docs program
 -}
 
 import Effects exposing (Effects)
@@ -17,8 +17,8 @@ batch them together into the single Cmd that the regular Html.App.program functi
 expect. This allows you to keep your main module consistent with the rest of your codebase
 because the functions can use Effects.
 -}
-app : { init : Effects model (Cmd msg), update : msg -> model -> Effects model (Cmd msg), subscriptions : model -> Sub msg, view : model -> Html msg } -> Program Never
-app { init, update, subscriptions, view } =
+program : { init : Effects model (Cmd msg), update : msg -> model -> Effects model (Cmd msg), subscriptions : model -> Sub msg, view : model -> Html msg } -> Program Never
+program { init, update, subscriptions, view } =
     Html.App.program
         { init = init |> Effects.toCmd
         , update = \msg model -> update msg model |> Effects.toCmd
