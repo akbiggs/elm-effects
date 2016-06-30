@@ -15,7 +15,7 @@ import Html.App
 the `Html.App` function. It will take a list of Cmds returned from your `init` and `update` functions and
 batch them together into the single Cmd that the regular Html.App.program functions
 expect. This allows you to keep your main module consistent with the rest of your codebase
-because the functions can use the Effects functions.
+because the functions can use Effects.
 -}
 app : { init : Effects model (Cmd msg), update : msg -> model -> Effects model (Cmd msg), subscriptions : model -> Sub msg, view : model -> Html msg } -> Program Never
 app { init, update, subscriptions, view } =
